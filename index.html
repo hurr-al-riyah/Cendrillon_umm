@@ -1,14 +1,17 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>프로젝트 상드리용</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>우마무스메 경주 리플레이</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
-    <h1>경주 영상</h1>
+    <h1>레이스를 불러오는 중...</h1>
+
+    <label for="raceSelect">레이스 선택</label>
+    <select id="raceSelect"></select>
 
     <canvas id="raceCanvas" width="800" height="300"></canvas>
 
@@ -21,7 +24,15 @@
         <option value="200">빠름</option>
       </select>
     </div>
+
+    <div id="navigation">
+      <button id="prevBtn">← 이전</button>
+      <button id="nextBtn">다음 →</button>
+    </div>
   </div>
+  <div id="commentaryArea" class="commentary">중계 영역</div>
+
+
 
   <script src="race.js"></script>
 </body>

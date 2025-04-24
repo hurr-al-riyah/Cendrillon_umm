@@ -1,99 +1,158 @@
-const canvas = document.getElementById('raceCanvas');
-const ctx = canvas.getContext('2d');
+const canvas = document.getElementById("raceCanvas");
+const ctx = canvas.getContext("2d");
 
-const playButton = document.getElementById('playButton');
-const speedSelect = document.getElementById('speedSelect');
-
-let raceTitle = "";
+let allRaces = [];
+let selectedRace = null;
 let horseNames = [];
-let positions = [];
-
-let currentSegment = 0;
+let segments = [];
+let currentPositions = [];
+let targetPositions = [];
+let currentIndex = 0;
+let transitionStartTime = null;
+let animationFrame = null;
 let playing = false;
-let playbackSpeed = 500;
+let speed = 500;
 
 const horseColors = [
   "#c70c60", "#5ABEFF", "#283DA1", "#fac802", "#ff94bc",
   "#FFDA73", "#3C3C3C", "#0d7a65", "#DC143C"
 ];
 
-// 캔버스에 현재 구간 표시
-function drawFrame(segmentIndex) {
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function updateCommentary(index) {
+  const commentary = selectedRace.commentary?.[index] || "";
+  document.getElementById("commentaryArea").innerHTML = commentary;
+}
+
+
+
+function animate(timestamp) {
+  if (!transitionStartTime) transitionStartTime = timestamp;
+  const progress = Math.min((timestamp - transitionStartTime) / speed, 1);
+
+  currentPositions = currentPositions.map((curr, i) =>
+    lerp(curr, targetPositions[i], progress)
+  );
+
+  drawFrame(currentPositions);
+
+  if (progress < 1) {
+    animationFrame = requestAnimationFrame(animate);
+  } else {
+    currentPositions = [...targetPositions];
+    transitionStartTime = null;
+    if (playing && currentIndex < segments.length - 1) {
+      currentIndex++;
+      startTransition();
+    } else {
+      playing = false;
+      document.getElementById("playButton").textContent = "▶ 재생";
+    }
+  }
+}
+
+function startTransition() {
+  targetPositions = segments[currentIndex];
+  animationFrame = requestAnimationFrame(animate);
+}
+
+function drawFrame(positions) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const margin = 120;
+  const max = Math.max(...segments.flat());
+  const scale = (canvas.width - 2 * margin) / max;
 
-  const currentPositions = positions[segmentIndex];
-  const marginX = 50;
-  const maxPosition = Math.max(...currentPositions);
-  const scale = (canvas.width - 2 * marginX) / maxPosition;
-
-  currentPositions.forEach((pos, idx) => {
-    const x = marginX + pos * scale;
-    const y = 40 + idx * 26;
-
-    // 우무무
+  positions.forEach((pos, i) => {
+    const x = margin + pos * scale;
+    const y = 40 + i * 26;
     ctx.beginPath();
     ctx.arc(x, y, 10, 0, 2 * Math.PI);
-    ctx.fillStyle = horseColors[idx % horseColors.length];
+    ctx.fillStyle = horseColors[i % horseColors.length];
     ctx.fill();
-    ctx.strokeStyle = "#333";
     ctx.stroke();
-
-    // 이름 라벨
-    ctx.font = "12px sans-serif";
     ctx.fillStyle = "#000";
-    ctx.fillText(`[${idx + 1}번] ${horseNames[idx]}`, x + 15, y + 4);
+    ctx.fillText(`[${i + 1}] ${horseNames[i]}`, x + 15, y + 5);
   });
 
-  // 구간 정보
   ctx.fillStyle = "#666";
-  ctx.font = "13px sans-serif";
-  ctx.fillText(`구간 ${segmentIndex + 1} / ${positions.length}`, 10, canvas.height - 10);
+  ctx.fillText(`구간 ${currentIndex} / ${segments.length - 1}`, 10, canvas.height - 10);
+
+  updateCommentary(currentIndex);
 }
 
-// 애니메이션 재생
-function playReplay() {
-  if (currentSegment >= positions.length) {
-    playing = false;
-    playButton.textContent = "▶ 재생";
-    return;
-  }
-
-  drawFrame(currentSegment);
-  currentSegment++;
-
-  if (playing) {
-    setTimeout(playReplay, playbackSpeed);
-  }
+function selectRace(index) {
+  selectedRace = allRaces[index];
+  horseNames = selectedRace.horse_names;
+  segments = selectedRace.positions;
+  currentPositions = new Array(horseNames.length).fill(0);
+  currentIndex = 0;
+  document.querySelector("h1").textContent = selectedRace.race_title;
+  drawFrame(currentPositions);
 }
 
-// 버튼/속도 제어
-playButton.addEventListener("click", () => {
+function loadAllRaces() {
+  fetch("data.json")
+    .then(res => res.json())
+    .then(json => {
+      allRaces = json.races;
+      const select = document.getElementById("raceSelect");
+      select.innerHTML = "";
+
+      allRaces.forEach((race, idx) => {
+        const option = document.createElement("option");
+        option.value = idx;
+        option.textContent = race.race_title;
+        select.appendChild(option);
+      });
+
+      select.addEventListener("change", (e) => {
+        selectRace(parseInt(e.target.value));
+      });
+
+      selectRace(0);
+    });
+}
+
+document.getElementById("playButton").onclick = () => {
   if (!playing) {
     playing = true;
-    playButton.textContent = "⏸ 일시정지";
-    playReplay();
+    document.getElementById("playButton").textContent = "⏸ 일시정지";
+    if (currentIndex >= segments.length) {
+      currentIndex = 0;
+      currentPositions = new Array(horseNames.length).fill(0);
+    }
+    startTransition();
   } else {
     playing = false;
-    playButton.textContent = "▶ 재생";
+    document.getElementById("playButton").textContent = "▶ 재생";
+    if (animationFrame) cancelAnimationFrame(animationFrame);
   }
-});
+};
 
-speedSelect.addEventListener("change", (e) => {
-  playbackSpeed = parseInt(e.target.value, 10);
-});
+document.getElementById("speedSelect").onchange = (e) => {
+  speed = parseInt(e.target.value);
+};
 
-// 데이터 불러오기
-fetch("data.json")
-  .then(res => res.json())
-  .then(json => {
-    raceTitle = json.race_title;
-    horseNames = json.horse_names;
-    positions = json.positions;
+document.getElementById("prevBtn").onclick = () => {
+  if (currentIndex > 0) {
+    currentIndex--;
+    targetPositions = segments[currentIndex];
+    transitionStartTime = null;
+    animationFrame = requestAnimationFrame(animate);
+  }
+};
 
-    document.querySelector("h1").textContent = raceTitle;
-    drawFrame(0); // 첫 구간 미리 표시
-  })
-  .catch(err => {
-    console.error("데이터를 불러오지 못했습니다:", err);
-    alert("data.json 파일을 불러오는 데 실패했습니다.");
-  });
+document.getElementById("nextBtn").onclick = () => {
+  if (currentIndex < segments.length - 1) {
+    currentIndex++;
+    targetPositions = segments[currentIndex];
+    transitionStartTime = null;
+    animationFrame = requestAnimationFrame(animate);
+  }
+};
+
+
+loadAllRaces();
