@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>우마무스메 경주 리플레이</title>
+  <title>프로젝트 상드리용</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,24 +15,38 @@
 
     <canvas id="raceCanvas" width="800" height="300"></canvas>
 
-    <div id="controls">
-      <button id="playButton">▶ 재생</button>
-      <label for="speedSelect">속도</label>
-      <select id="speedSelect">
-        <option value="1000">느림</option>
-        <option value="500" selected>보통</option>
-        <option value="200">빠름</option>
-      </select>
-    </div>
+    <div id="topControls">
+      <div id="directionControls">
+        <div><b>레이스 진행 방향</b></div>
+        <label><input type="radio" name="direction" value="auto" checked> 자동</label>
+        <label><input type="radio" name="direction" value="leftToRight"> 좌 → 우 고정</label>
+        <label><input type="radio" name="direction" value="rightToLeft"> 우 → 좌 고정</label>
+      </div>
 
-    <div id="navigation">
-      <button id="prevBtn">← 이전</button>
-      <button id="nextBtn">다음 →</button>
+      <div id="raceControls">
+        <button id="playButton">▶ 재생</button>
+        <label>속도
+          <select id="speedSelect">
+            <option value="very_slow">매우 느림</option>
+            <option value="slow">느림</option>
+            <option value="normal" selected>보통</option>
+            <option value="fast">빠름</option>
+            <option value="very_fast">매우 빠름</option>
+          </select>
+        </label>
+        <br>
+        <button id="prevBtn">← 이전</button>
+        <button id="nextBtn">다음 →</button>
+        <button id="resetBtn">처음으로</button>
+      </div>
+    
     </div>
+    
+    
+    
   </div>
-  <div id="commentaryArea" class="commentary">중계 영역</div>
-
-
+  <div id="commentaryTitle" class="commentary"><b>[중계]</b></div>
+  <div id="commentaryArea" class="commentary">중계 내용</div>
 
   <script src="race.js"></script>
 </body>

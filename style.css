@@ -32,6 +32,8 @@ h1 {
   margin: 20px 0;
 }
 
+
+
 #controls,
 #navigation {
   margin: 10px 0;
@@ -52,6 +54,7 @@ button:hover,
 select:hover {
   background-color: #f0f0f0;
 }
+
 
 label {
   margin-right: 8px;
