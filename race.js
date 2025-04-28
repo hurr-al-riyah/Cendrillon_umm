@@ -15,6 +15,7 @@ let transitionDuration = 1000; // 구간별 기본 지속시간
 let animationFrame = null;
 let playing = false;
 let baseSpeed = 2.0; // 기본 속도 배율
+let baseSpeedTmp = 2.0;
 let directionMode = "auto"; // 기본은 자동
 let dir = 1;
 
@@ -112,16 +113,27 @@ function animate(timestamp) {
       currentIndex++;
 
       if (currentRaceIndex === 2 && currentIndex === 13) {
-        pauseDuration = 3000; // 3초 대기
+        pauseDuration = 3000;
       }
       if (currentRaceIndex === 2 && currentIndex === 14) {
-        pauseDuration = 2000; // 3초 대기
+        pauseDuration = 2000;
       }
       if (currentRaceIndex === 2 && currentIndex === 15) {
-        pauseDuration = 5000; // 5초 대기
+        pauseDuration = 5000;
+      }
+      if (currentRaceIndex === 3 && currentIndex >= 11 && currentIndex <= 13) {
+        pauseDuration = 1000;
+        baseSpeedTmp = baseSpeed;
+        baseSpeed = 4.0
       }
 
       prepareNextTransition();
+
+      if (currentRaceIndex === 3 && currentIndex >= 11 && currentIndex <= 13) {
+        pauseDuration = 1000;
+        baseSpeed = baseSpeedTmp;
+      }
+
       transitionStartTime = timestamp;
     } else {
       playing = false;
@@ -202,7 +214,7 @@ function selectRace(index) {
 }
 
 function loadAllRaces() {
-  fetch("data.json?version=v1.02")
+  fetch("data.json?version=v1.03")
     .then(res => res.json())
     .then(json => {
       allRaces = json.races;
