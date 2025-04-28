@@ -78,8 +78,26 @@ function startTransition(timestamp) {
   animationFrame = requestAnimationFrame(animate);
 }
 
+let pauseDuration = 0; // 멈출 시간(ms)
+let pauseStartTime = null; // 멈추기 시작한 시간
+
 function animate(timestamp) {
   if (!transitionStartTime) transitionStartTime = timestamp;
+
+  if (pauseDuration > 0) {
+    if (!pauseStartTime) pauseStartTime = timestamp;
+    const pauseElapsed = timestamp - pauseStartTime;
+    if (pauseElapsed < pauseDuration) {
+      animationFrame = requestAnimationFrame(animate);
+      return; // 멈춘 상태 유지
+    } else {
+      // 멈춤 완료
+      pauseDuration = 0;
+      pauseStartTime = null;
+      transitionStartTime = timestamp;
+    }
+  }
+
   const elapsed = timestamp - transitionStartTime;
   const progress = Math.min(elapsed / transitionDuration, 1);
 
@@ -92,6 +110,17 @@ function animate(timestamp) {
   if (progress >= 1) {
     if (playing && currentIndex < segments.length - 1) {
       currentIndex++;
+
+      if (currentRaceIndex === 2 && currentIndex === 13) {
+        pauseDuration = 3000; // 3초 대기
+      }
+      if (currentRaceIndex === 2 && currentIndex === 14) {
+        pauseDuration = 2000; // 3초 대기
+      }
+      if (currentRaceIndex === 2 && currentIndex === 15) {
+        pauseDuration = 5000; // 5초 대기
+      }
+
       prepareNextTransition();
       transitionStartTime = timestamp;
     } else {
@@ -173,7 +202,7 @@ function selectRace(index) {
 }
 
 function loadAllRaces() {
-  fetch("data.json?version=v1.01")
+  fetch("data.json?version=v1.02")
     .then(res => res.json())
     .then(json => {
       allRaces = json.races;
