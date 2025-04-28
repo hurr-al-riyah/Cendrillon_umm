@@ -173,7 +173,7 @@ function drawFrame(positions) {
   // const max = Math.max(...segments.slice(0, segments.length - 1).flat());  // 최종 구간 -1에서 표시하는 부분
   const scale = (canvas.width - (left_margin + right_margin)) / max;
 
-
+  window.tooltipRegions = [];
   positions.forEach((pos, i) => {
     let x;
     if (dir === 1) {
@@ -190,6 +190,11 @@ function drawFrame(positions) {
     ctx.stroke();
     ctx.fillStyle = "#000";
     ctx.fillText(`[${i + 1}] ${horseNames[i]}`, x + 15, y + 5);
+
+    window.tooltipRegions.push({
+      x: x, y: y, radius: 10, // 원 영역
+      text: selectedRace.race_type?.[i] || "각질 정보 없음" // 해당 우마무스메의 각질
+    });
   });
 
   ctx.fillStyle = "#666";
@@ -214,7 +219,7 @@ function selectRace(index) {
 }
 
 function loadAllRaces() {
-  fetch("data.json?version=v1.03")
+  fetch("data.json?version=v1.04")
     .then(res => res.json())
     .then(json => {
       allRaces = json.races;
@@ -324,6 +329,34 @@ function applyDirection() {
     dir = 0;
   }
 }
+
+const tooltip = document.getElementById('tooltip');
+
+canvas.addEventListener("mousemove", (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+
+  tooltip.style.display = "none"; // 기본은 숨김
+
+  if (window.tooltipRegions) {
+    for (const region of tooltipRegions) {
+      const dx = mouseX - region.x;
+      const dy = mouseY - region.y;
+      if (Math.sqrt(dx * dx + dy * dy) <= region.radius) {
+        tooltip.style.display = "block";
+        tooltip.textContent = region.text;
+        tooltip.style.left = `${e.pageX + 10}px`; // 커서 오른쪽 살짝 띄우기
+        tooltip.style.top = `${e.pageY + 10}px`;
+        break;
+      }
+    }
+  }
+});
+
+canvas.addEventListener("mouseleave", () => {
+  tooltip.style.display = "none";
+});
 
 
 loadAllRaces();
