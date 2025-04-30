@@ -126,6 +126,9 @@ function animate(timestamp) {
         baseSpeedTmp = baseSpeed;
         baseSpeed = 4.0
       }
+      if (currentRaceIndex === 5 && (currentIndex === 6 || currentIndex === 8)) {
+        pauseDuration = 3000;
+      }
 
       prepareNextTransition();
 
@@ -219,7 +222,7 @@ function selectRace(index) {
 }
 
 function loadAllRaces() {
-  fetch("data.json?version=v1.04")
+  fetch("data.json?version=v1.05")
     .then(res => res.json())
     .then(json => {
       allRaces = json.races;
