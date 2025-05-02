@@ -19,6 +19,25 @@ let baseSpeedTmp = 2.0;
 let directionMode = "auto"; // 기본은 자동
 let dir = 1;
 
+// 전역변수 초기화
+function restGlobalVariables() {
+  currentPositions = [];
+  startPositions = [];
+  targetPositions = [];
+  currentIndex = 0;
+  transitionStartTime = null;
+  transitionDuration = 1000;
+  animationFrame = null;
+  playing = false;
+  baseSpeedTmp = 2.0;
+  directionMode = "auto";
+  dir = 1;
+  currentHorseIndex = 0;
+  runwayProgress = 0;
+  pauseDuration = 0;
+  pauseStartTime = null;
+}
+
 // 날씨: ☀️☁️💧🌧️
 // 혹시 몰라서 날씨 가져오는 함수 미리 만들어 둠 (미사용)
 function getWeatherEmoji(weather) {
@@ -194,13 +213,18 @@ function drawFrame(positions, alone=false) {
     if (alone === true) {
       y = canvas.height / 2;
     }
+    ctx.font = "12px sans-serif";
     ctx.beginPath();
     ctx.arc(x, y, 10, 0, 2 * Math.PI);
     ctx.fillStyle = horseColorsMap[horseNames[i]] || "#CCCCCC";
     ctx.fill();
     ctx.stroke();
     ctx.fillStyle = "#000";
+    if (currentRaceIndex === 7) {
+      ctx.font = "24px sans-serif";
+    }
     ctx.fillText(`[${i + 1}] ${horseNames[i]}`, x + 15, y + 5);
+    ctx.font = "12px sans-serif";
 
     window.tooltipRegions.push({
       x: x, y: y, radius: 10, // 원 영역
@@ -253,9 +277,14 @@ function animateRunway(timestamp) {
   }
 }
 
-
 // 초기화
 function selectRace(index) {
+  restGlobalVariables();
+  document.getElementById("playButton").textContent = "▶ 재생";
+  if (index !== 7) {
+    requestAnimationFrame(singleAnimate);
+  }
+
   currentRaceIndex = index;
   selectedRace = allRaces[index];
   horseNames = selectedRace.horse_names;
@@ -265,6 +294,7 @@ function selectRace(index) {
   targetPositions = segments[0];
   currentIndex = 0;
   dir = selectedRace.direction ?? 1;
+  
   document.querySelector("h1").textContent = selectedRace.race_title;
   if (currentRaceIndex === 7) {
     currentHorseIndex = 0;
@@ -274,11 +304,10 @@ function selectRace(index) {
   } else {
     drawFrame(currentPositions);
   }
-  
 }
 
 function loadAllRaces() {
-  fetch("data.json?version=v1.08")
+  fetch("data.json?version=v1.09")
     .then(res => res.json())
     .then(json => {
       allRaces = json.races;
@@ -299,7 +328,6 @@ function loadAllRaces() {
       selectRace(allRaces.length - 1); // 마지막 레이스 선택
     });
 }
-
 
 // 버튼 처리
 document.getElementById("playButton").onclick = () => {
