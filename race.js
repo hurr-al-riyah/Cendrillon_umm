@@ -36,7 +36,7 @@ const horseColorsMap = {
   "스윗 헤븐즈": "#674ea7",
   "네뷸라 크레센트": "#cc0000",
   "시로키바 바리아": "#ff6d01",
-  "밀밭아씨": "#b3de70",
+  "5번 참가자": "#b3de70",
   "애쉬 서클": "#ffd966",
   "폴라리스 블룸": "#f4cccc",
   "PH-4649": "#cc4125",
@@ -49,7 +49,7 @@ const horseColorsMap = {
   "뉴 페인터": "#ff68bb",
   "″-9": "#ffe2f2",
   "브라이트 샤워": "#f3f3f3",
-  "피어스 더 퓨쳐": "#ddcfff"
+  "피어스 더 퓨처": "#ddcfff"
 };
 
 
@@ -167,17 +167,22 @@ function singleAnimate(timestamp) {
 }
 
 // visualization
-function drawFrame(positions) {
+function drawFrame(positions, alone=false) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const left_margin = 15;
   const right_margin = 130;
   // const margin = 120;
-  const max = Math.max(...segments.flat());
+  max = Math.max(...segments.flat());
+  if (alone == true) {
+    max = 1000;
+  }
   // const max = Math.max(...segments.slice(0, segments.length - 1).flat());  // 최종 구간 -1에서 표시하는 부분
   const scale = (canvas.width - (left_margin + right_margin)) / max;
 
   window.tooltipRegions = [];
   positions.forEach((pos, i) => {
+    if (pos < 0) return;
+
     let x;
     if (dir === 1) {
       x = left_margin + pos * scale;
@@ -185,7 +190,10 @@ function drawFrame(positions) {
       x = left_margin + (max - pos) * scale;
     }
     
-    const y = 40 + i * 26;
+    y = 40 + i * 26;
+    if (alone === true) {
+      y = canvas.height / 2;
+    }
     ctx.beginPath();
     ctx.arc(x, y, 10, 0, 2 * Math.PI);
     ctx.fillStyle = horseColorsMap[horseNames[i]] || "#CCCCCC";
@@ -206,6 +214,46 @@ function drawFrame(positions) {
   updateCommentary(currentIndex);
 }
 
+let currentHorseIndex = 0;
+let runwayProgress = 0;
+
+// 승부복 공개 무대 전용 함수
+function animateRunway(timestamp) {
+  if (!transitionStartTime) transitionStartTime = timestamp;
+  const elapsed = timestamp - transitionStartTime;
+  const progress = Math.min(elapsed / (transitionDuration * 10 / baseSpeed) + runwayProgress, 1);
+
+  // 현재 구간에서 0인 말만 선택
+  const currentRunnerIndex = segments[currentIndex].findIndex(v => v === 0);
+
+  // 주자 이동
+  currentPositions = horseNames.map((_, i) =>
+    i === currentRunnerIndex ? transitionDuration * progress : -1
+  );
+
+  drawFrame(currentPositions, true);
+
+  if (progress >= 1) {
+    runwayProgress = 0;
+    if (currentIndex < segments.length - 1) {
+      currentIndex++;
+      transitionStartTime = null;
+      updateCommentary(currentIndex);
+    } else {
+      playing = false;
+      document.getElementById("playButton").textContent = "▶ 재생";
+      return;
+    }
+  }
+
+  if (playing) {
+    requestAnimationFrame(animateRunway);
+  }else{
+    runwayProgress = progress;
+  }
+}
+
+
 // 초기화
 function selectRace(index) {
   currentRaceIndex = index;
@@ -218,11 +266,19 @@ function selectRace(index) {
   currentIndex = 0;
   dir = selectedRace.direction ?? 1;
   document.querySelector("h1").textContent = selectedRace.race_title;
-  drawFrame(currentPositions);
+  if (currentRaceIndex === 7) {
+    currentHorseIndex = 0;
+    transitionStartTime = null;
+    updateCommentary(currentHorseIndex);
+    requestAnimationFrame(animateRunway);
+  } else {
+    drawFrame(currentPositions);
+  }
+  
 }
 
 function loadAllRaces() {
-  fetch("data.json?version=v1.06")
+  fetch("data.json?version=v1.07")
     .then(res => res.json())
     .then(json => {
       allRaces = json.races;
@@ -254,7 +310,13 @@ document.getElementById("playButton").onclick = () => {
       currentIndex = 0;
       currentPositions = new Array(horseNames.length).fill(0);
     }
-    startTransition();
+    if (currentRaceIndex === 7) { // 런웨이 모드
+      transitionStartTime = null;
+      updateCommentary(currentIndex);
+      requestAnimationFrame(animateRunway);
+    } else {
+      startTransition();
+    }
   } else {
     playing = false;
     document.getElementById("playButton").textContent = "▶ 재생";
@@ -271,10 +333,20 @@ document.getElementById("prevBtn").onclick = () => {
     targetPositions = [...segments[currentIndex]];
 
     transitionDuration = 1000 / baseSpeed;
-    transitionStartTime = performance.now();
-
+    if (currentRaceIndex === 7) {
+      transitionStartTime = null;
+      runwayProgress = 0;
+      transitionDuration = 1000;
+    }else{
+      transitionStartTime = performance.now();
+    }
     if (!playing) {
-      requestAnimationFrame(singleAnimate);
+      if (currentRaceIndex === 7){
+        updateCommentary(currentHorseIndex);
+        requestAnimationFrame(animateRunway);
+      }else{
+        requestAnimationFrame(singleAnimate);
+      }
     }
   }
 };
@@ -288,15 +360,23 @@ document.getElementById("nextBtn").onclick = () => {
     targetPositions = [...segments[currentIndex]];
 
     transitionDuration = 1000 / baseSpeed;
-    transitionStartTime = performance.now();
-
+    if (currentRaceIndex === 7) {
+      transitionStartTime = null;
+      runwayProgress = 0;
+      transitionDuration = 1000;
+    }else{
+      transitionStartTime = performance.now();
+    }
     if (!playing) {
-      requestAnimationFrame(singleAnimate);
+      if (currentRaceIndex === 7){
+        updateCommentary(currentHorseIndex);
+        requestAnimationFrame(animateRunway);
+      }else{
+        requestAnimationFrame(singleAnimate);
+      }
     }
   }
 };
-
-
 
 document.getElementById("resetBtn").onclick = () => {
   currentIndex = 0;
