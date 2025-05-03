@@ -192,7 +192,17 @@ function singleAnimate(timestamp) {
 
 function backgroundCtxUpdate()
 {
-  backgroundCtx.clearRect(0, 280, backgroundCanvas.width, backgroundCanvas.height);
+  backgroundCtx.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+  
+  const highlightText = selectedRace.highlight?.[currentIndex];
+  if (highlightText && highlightText.trim() !== "") {
+    backgroundCtx.font = "bold 20px sans-serif";
+    backgroundCtx.fillStyle = "#000000";
+    backgroundCtx.textAlign = "center";
+    backgroundCtx.fillText(highlightText, backgroundCanvas.width / 2, 30);
+    backgroundCtx.textAlign = "start";
+  }
+
   backgroundCtx.font = "12px sans-serif";
   backgroundCtx.fillStyle = "#666";
   backgroundCtx.fillText(`구간 ${currentIndex} / ${segments.length - 1}`, 10, backgroundCanvas.height - 10);
@@ -210,6 +220,7 @@ function drawFrame(positions, alone=false) {
     max = 1000;
   }
   const scale = (raceCanvas.width - (left_margin + right_margin)) / max;
+  const highlightIndices = selectedRace.highlight_speaker?.[currentIndex] || [];
 
   window.tooltipRegions = [];
   positions.forEach((pos, i) => {
@@ -222,7 +233,7 @@ function drawFrame(positions, alone=false) {
       x = left_margin + (max - pos) * scale;
     }
     
-    y = 20 + i * 26;
+    y = 30 + (9 - positions.length) * 10 + i * 26;
     if (alone === true) {
       y = raceCanvas.height / 2;
     }
@@ -231,7 +242,16 @@ function drawFrame(positions, alone=false) {
     raceCtx.arc(x, y, 10, 0, 2 * Math.PI);
     raceCtx.fillStyle = horseColorsMap[horseNames[i]] || "#CCCCCC";
     raceCtx.fill();
+
+    if (highlightIndices.includes(i + 1)) {
+      raceCtx.strokeStyle = "#ff5050"; // 붉은색
+      raceCtx.lineWidth = 3;
+    } else {
+      raceCtx.strokeStyle = "#000"; // 기본 검은색
+      raceCtx.lineWidth = 1;
+    }
     raceCtx.stroke();
+
     raceCtx.fillStyle = "#000";
     raceCtx.fillText(`[${i + 1}] ${horseNames[i]}`, x + 15, y + 5);
 
@@ -314,7 +334,7 @@ function selectRace(index) {
 }
 
 function loadAllRaces() {
-  fetch("data.json?version=v1.10")
+  fetch("data.json?version=v1.11")
     .then(res => res.json())
     .then(json => {
       allRaces = json.races;
