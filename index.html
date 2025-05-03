@@ -13,7 +13,10 @@
     <label for="raceSelect">레이스 선택</label>
     <select id="raceSelect"></select>
 
-    <canvas id="raceCanvas" width="800" height="300"></canvas>
+    <div style="position: relative; width:800px;height: 340px;margin: 0 auto;">
+      <canvas id="raceCanvas" width="800" height="260" style="position: absolute; left:0; top:20px; z-index:1;"></canvas>
+      <canvas id="backgroundCanvas" width="800" height="300" style="position: absolute; left:0; top:0; z-index:0;"></canvas>
+    </div>    
 
     <div id="topControls">
       <div id="directionControls">
@@ -45,8 +48,8 @@
   <div id="commentaryTitle" class="commentary"><b>[중계]</b></div>
   <div id="commentaryArea" class="commentary">중계 내용</div>
 
-  <div id="tooltip" style="position: absolute; padding: 4px 8px; background: #333; color: #fff; border-radius: 4px; font-size: 0.8rem; pointer-events: none; display: none;"></div>
+  <div id="tooltip" style="position: absolute; padding: 4px 8px; background: #333; color: #fff; border-radius: 4px; font-size: 0.8rem; pointer-events: none; display: none;z-index:10;"></div>
 
-  <script src="race.js?version=v1.09"></script>
+  <script src="race.js?version=v1.10"></script>
 </body>
 </html>

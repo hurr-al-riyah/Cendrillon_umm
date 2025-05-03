@@ -1,5 +1,9 @@
-const canvas = document.getElementById("raceCanvas");
-const ctx = canvas.getContext("2d");
+const backgroundCanvas = document.getElementById("backgroundCanvas");
+const backgroundCtx = backgroundCanvas.getContext("2d");
+
+const raceCanvas = document.getElementById("raceCanvas");
+const raceCtx = raceCanvas.getContext("2d");
+
 
 let allRaces = [];
 let selectedRace = null;
@@ -130,6 +134,7 @@ function animate(timestamp) {
   if (progress >= 1) {
     if (playing && currentIndex < segments.length - 1) {
       currentIndex++;
+      backgroundCtxUpdate();
 
       if (currentRaceIndex === 2 && currentIndex === 13) {
         pauseDuration = 3000;
@@ -185,18 +190,26 @@ function singleAnimate(timestamp) {
   }
 }
 
+function backgroundCtxUpdate()
+{
+  backgroundCtx.clearRect(0, 280, backgroundCanvas.width, backgroundCanvas.height);
+  backgroundCtx.font = "12px sans-serif";
+  backgroundCtx.fillStyle = "#666";
+  backgroundCtx.fillText(`구간 ${currentIndex} / ${segments.length - 1}`, 10, backgroundCanvas.height - 10);
+}
+
 // visualization
 function drawFrame(positions, alone=false) {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  raceCtx.clearRect(0, 0, raceCanvas.width, raceCanvas.height);
   const left_margin = 15;
   const right_margin = 130;
   // const margin = 120;
+  // const max = Math.max(...segments.slice(0, segments.length - 1).flat());  // 최종 구간 -1에서 표시하는 부분
   max = Math.max(...segments.flat());
   if (alone == true) {
     max = 1000;
   }
-  // const max = Math.max(...segments.slice(0, segments.length - 1).flat());  // 최종 구간 -1에서 표시하는 부분
-  const scale = (canvas.width - (left_margin + right_margin)) / max;
+  const scale = (raceCanvas.width - (left_margin + right_margin)) / max;
 
   window.tooltipRegions = [];
   positions.forEach((pos, i) => {
@@ -209,32 +222,24 @@ function drawFrame(positions, alone=false) {
       x = left_margin + (max - pos) * scale;
     }
     
-    y = 40 + i * 26;
+    y = 20 + i * 26;
     if (alone === true) {
-      y = canvas.height / 2;
+      y = raceCanvas.height / 2;
     }
-    ctx.font = "12px sans-serif";
-    ctx.beginPath();
-    ctx.arc(x, y, 10, 0, 2 * Math.PI);
-    ctx.fillStyle = horseColorsMap[horseNames[i]] || "#CCCCCC";
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = "#000";
-    if (currentRaceIndex === 7) {
-      ctx.font = "24px sans-serif";
-    }
-    ctx.fillText(`[${i + 1}] ${horseNames[i]}`, x + 15, y + 5);
-    ctx.font = "12px sans-serif";
+    raceCtx.font = currentRaceIndex === 7 ? "24px sans-serif" : "12px sans-serif";
+    raceCtx.beginPath();
+    raceCtx.arc(x, y, 10, 0, 2 * Math.PI);
+    raceCtx.fillStyle = horseColorsMap[horseNames[i]] || "#CCCCCC";
+    raceCtx.fill();
+    raceCtx.stroke();
+    raceCtx.fillStyle = "#000";
+    raceCtx.fillText(`[${i + 1}] ${horseNames[i]}`, x + 15, y + 5);
 
     window.tooltipRegions.push({
       x: x, y: y, radius: 10, // 원 영역
       text: selectedRace.race_type?.[i] || "각질 정보 없음" // 해당 우마무스메의 각질
     });
   });
-
-  ctx.fillStyle = "#666";
-  ctx.fillText(`구간 ${currentIndex} / ${segments.length - 1}`, 10, canvas.height - 10);
-
   updateCommentary(currentIndex);
 }
 
@@ -261,6 +266,7 @@ function animateRunway(timestamp) {
     runwayProgress = 0;
     if (currentIndex < segments.length - 1) {
       currentIndex++;
+      backgroundCtxUpdate();
       transitionStartTime = null;
       updateCommentary(currentIndex);
     } else {
@@ -293,6 +299,7 @@ function selectRace(index) {
   startPositions = [...currentPositions];
   targetPositions = segments[0];
   currentIndex = 0;
+  backgroundCtxUpdate();
   dir = selectedRace.direction ?? 1;
   
   document.querySelector("h1").textContent = selectedRace.race_title;
@@ -307,7 +314,7 @@ function selectRace(index) {
 }
 
 function loadAllRaces() {
-  fetch("data.json?version=v1.09")
+  fetch("data.json?version=v1.10")
     .then(res => res.json())
     .then(json => {
       allRaces = json.races;
@@ -326,6 +333,7 @@ function loadAllRaces() {
       });
 
       selectRace(allRaces.length - 1); // 마지막 레이스 선택
+      backgroundCtxUpdate();
     });
 }
 
@@ -345,6 +353,7 @@ document.getElementById("playButton").onclick = () => {
     } else {
       startTransition();
     }
+    backgroundCtxUpdate();
   } else {
     playing = false;
     document.getElementById("playButton").textContent = "▶ 재생";
@@ -357,6 +366,7 @@ document.getElementById("prevBtn").onclick = () => {
     if (animationFrame) cancelAnimationFrame(animationFrame);
     // currentPositions = [...segments[currentIndex]];
     currentIndex--;
+    backgroundCtxUpdate();
     startPositions = [...currentPositions];
     targetPositions = [...segments[currentIndex]];
 
@@ -384,6 +394,7 @@ document.getElementById("nextBtn").onclick = () => {
     if (animationFrame) cancelAnimationFrame(animationFrame);
     // currentPositions = [...segments[currentIndex]];
     currentIndex++;
+    backgroundCtxUpdate();
     startPositions = [...currentPositions];
     targetPositions = [...segments[currentIndex]];
 
@@ -408,6 +419,7 @@ document.getElementById("nextBtn").onclick = () => {
 
 document.getElementById("resetBtn").onclick = () => {
   currentIndex = 0;
+  backgroundCtxUpdate();
   playing = false;
   document.getElementById("playButton").textContent = "▶ 재생";
   if (animationFrame) cancelAnimationFrame(animationFrame);
@@ -443,8 +455,8 @@ function applyDirection() {
 
 const tooltip = document.getElementById('tooltip');
 
-canvas.addEventListener("mousemove", (e) => {
-  const rect = canvas.getBoundingClientRect();
+raceCanvas.addEventListener("mousemove", (e) => {
+  const rect = raceCanvas.getBoundingClientRect();
   const mouseX = e.clientX - rect.left;
   const mouseY = e.clientY - rect.top;
 
@@ -465,9 +477,8 @@ canvas.addEventListener("mousemove", (e) => {
   }
 });
 
-canvas.addEventListener("mouseleave", () => {
+raceCanvas.addEventListener("mouseleave", () => {
   tooltip.style.display = "none";
 });
-
 
 loadAllRaces();
