@@ -334,7 +334,7 @@ function selectRace(index) {
 }
 
 function loadAllRaces() {
-  fetch("data.json?version=v1.11")
+  fetch("data.json?version=v1.12")
     .then(res => res.json())
     .then(json => {
       allRaces = json.races;
