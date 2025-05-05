@@ -22,6 +22,7 @@ let baseSpeed = 2.0; // 기본 속도 배율
 let baseSpeedTmp = 2.0;
 let directionMode = "auto"; // 기본은 자동
 let dir = 1;
+let max_distance = -1;
 
 // 전역변수 초기화
 function restGlobalVariables() {
@@ -215,14 +216,11 @@ function drawFrame(positions, alone=false) {
   const right_margin = 130;
   // const margin = 120;
   // const max = Math.max(...segments.slice(0, segments.length - 1).flat());  // 최종 구간 -1에서 표시하는 부분
-  max = Math.max(...segments.flat());
-  if (alone == true) {
-    max = 1000;
-  }
-  const scale = (raceCanvas.width - (left_margin + right_margin)) / max;
+  const scale = (raceCanvas.width - (left_margin + right_margin)) / max_distance;
   const highlightIndices = selectedRace.highlight_speaker?.[currentIndex] || [];
 
   window.tooltipRegions = [];
+
   positions.forEach((pos, i) => {
     if (pos < 0) return;
 
@@ -230,14 +228,13 @@ function drawFrame(positions, alone=false) {
     if (dir === 1) {
       x = left_margin + pos * scale;
     } else {
-      x = left_margin + (max - pos) * scale;
+      x = left_margin + (max_distance - pos) * scale;
     }
     
     y = 30 + (9 - positions.length) * 10 + i * 26;
     if (alone === true) {
       y = raceCanvas.height / 2;
     }
-    raceCtx.font = currentRaceIndex === 7 ? "24px sans-serif" : "12px sans-serif";
     raceCtx.beginPath();
     raceCtx.arc(x, y, 10, 0, 2 * Math.PI);
     raceCtx.fillStyle = horseColorsMap[horseNames[i]] || "#CCCCCC";
@@ -307,6 +304,7 @@ function animateRunway(timestamp) {
 function selectRace(index) {
   restGlobalVariables();
   document.getElementById("playButton").textContent = "▶ 재생";
+  raceCtx.font = index === 7 ? "24px sans-serif" : "12px sans-serif";
   if (index !== 7) {
     requestAnimationFrame(singleAnimate);
   }
@@ -315,6 +313,10 @@ function selectRace(index) {
   selectedRace = allRaces[index];
   horseNames = selectedRace.horse_names;
   segments = selectedRace.positions;
+  max_distance = Math.max(...segments.flat());
+  if (index === 7) {
+    max_distance = 1000;
+  }
   currentPositions = new Array(horseNames.length).fill(0);
   startPositions = [...currentPositions];
   targetPositions = segments[0];
@@ -334,7 +336,7 @@ function selectRace(index) {
 }
 
 function loadAllRaces() {
-  fetch("data.json?version=v1.12")
+  fetch("data.json?version=v1.13")
     .then(res => res.json())
     .then(json => {
       allRaces = json.races;
